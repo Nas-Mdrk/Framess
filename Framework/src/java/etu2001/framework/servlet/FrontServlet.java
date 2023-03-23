@@ -3,86 +3,82 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package etu2001.framework.servlet ;
-import java.io.IOException;
-import java.io.PrintWriter;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+package etu2018.framework.servlet;
+
+import etu2018.framework.*;
+import etu2018.framework.annotation.*;
+import java.io.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import java.util.*;
-import etu2001.framework.*;
+import java.lang.reflect.*;
+import java.rmi.ServerException;
 
-/**
- *
- * @author ITU
- */
+
+
 public class FrontServlet extends HttpServlet {
+    HashMap<String,Mapping> MappingUrls;
+    public static List<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException {
+        List<Class<?>> classes = new ArrayList<>();
+        if (!directory.exists()) {
+            return classes;
+        }
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                classes.addAll(findClasses(file, packageName + "." + file.getName()));
+            } else if (file.getName().endsWith(".class")) {
+                String className = packageName + "." + file.getName().substring(0, file.getName().length() - 6);
+                Class<?> clazz = Class.forName(className);
+                classes.add(clazz);
+            }
+        }
+        return classes;
+    }
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    HashMap<String,Mapping>MappingUrls;
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet FrontServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet FrontServlet at " + request.getServletPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
+        PrintWriter out = response.getWriter();
+        out.println("<h3>Servlet UrlController at " + request.getServletPath() + "</h3>");
+        out.println("<p>" + request.getContextPath() + "</p>");
+        File f = new File("C:/Program Files/Apache Software Foundation/Tomcat 10.0/webapps/framework/WEB-INF/classes/model");
+        /*File[] files = f.listFiles();
+        for (File file : files){
+            if(file.getName().endsWith(".class")){
+                out.println(file.getName());
+            }  
+        }*/
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
+        try{
+            List<Class<?>> classes = FrontServlet.findClasses(f,"model");
+            for(int i = 0;i<classes.size();i++){
+                Class<?> clazz = classes.get(i);
+                Method[] methods = clazz.getDeclaredMethods();
+
+                for (Method method : methods) {
+                    if (method.isAnnotationPresent(etu2018.framework.annotation.Annotation.class)) {
+                        Annotation annotation = method.getAnnotation(etu2018.framework.annotation.Annotation.class);
+                        String url = annotation.url();
+                        if (request.getServletPath().equals(url)) {
+                            // Do something with the method
+                            out.println("io le izy eh : " + method.getName() + "() waaaaaah!!");
+                        }
+                    }
+                }
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+            
+    }
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }
